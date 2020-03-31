@@ -39,8 +39,8 @@ class _CRG(Module):
         # # #
 
         # Clk / Rst
-        clk27 = platform.request("clk25")
-        platform.add_period_constraint(clk27, 1e9/25e6)
+        clk25 = platform.request("clk25")
+        platform.add_period_constraint(clk25, 1e9/25e6)
 
         # Power on reset
         por_count = Signal(16, reset=2**16-1)
@@ -51,7 +51,7 @@ class _CRG(Module):
 
         # PLL
         self.submodules.pll = pll = ECP5PLL()
-        pll.register_clkin(clk27, 25e6)
+        pll.register_clkin(clk25, 25e6)
         pll.create_clkout(self.cd_sys, sys_clk_freq)
         self.specials += AsyncResetSynchronizer(self.cd_sys, ~por_done | ~pll.locked)
 
@@ -82,10 +82,7 @@ class IOStreamer(Module):
 # IOsStreamSoC -------------------------------------------------------------------------------------
 
 class IOsStreamSoC(SoCMini):
-    def __init__(self, platform, stream_ios="first_half"):
-        # Device is not large enough to stream all IOs at once, need to generate 2 bitstreams.
-        assert stream_ios in ["first_half", "second_half"]
-
+    def __init__(self, platform):
         sys_clk_freq = int(25e6)
         SoCMini.__init__(self, platform, sys_clk_freq)
 
@@ -101,19 +98,13 @@ class IOsStreamSoC(SoCMini):
 
         # Exclude some IOs -------------------------------------------------------------------------
         excludes = []
-        excludes += ["P6"]  # 27MHz clock input
+        excludes += ["P6"]
         for exclude in excludes:
             ios.remove(exclude)
-        if stream_ios == "first_half":
-            for io in ios[:len(ios)//2]:
-                ios.remove(io)
-        else:
-            for io in ios[len(ios)//2:]:
-                ios.remove(io)
 
         # Create platform IOs ----------------------------------------------------------------------
         for io in ios:
-            platform.add_extension([(io, 0, Pins(io), IOStandard("LVCMOS33"))])
+            platform.add_extension([(io, 0, Pins(io), IOStandard("LVCMOS33"), Misc("DRIVE=4"))])
 
         # Stream IOs' identifiers to IOs -----------------------------------------------------------
         for io in ios:
@@ -141,9 +132,8 @@ jtag newtap ecp5 tap -irlen 8 -expected-id 0x41111043
 # Build --------------------------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Take control of your ColorLight FPGA board with LiteX")
+    parser = argparse.ArgumentParser()
     parser.add_argument("--build", action="store_true", help="build bitstream")
-    parser.add_argument("--stream-ios", default="first_half")
     parser.add_argument("--load", action="store_true", help="load bitstream")
     args = parser.parse_args()
 
@@ -151,8 +141,8 @@ def main():
         load()
 
     platform = Platform(toolchain="trellis")
-    soc      = IOsStreamSoC(platform, stream_ios=args.stream_ios)
-    builder  = Builder(soc, output_dir="build", csr_csv="csr.csv")
+    soc      = IOsStreamSoC(platform)
+    builder  = Builder(soc, output_dir="build")
     builder.build(build_name="ios_stream", run=args.build)
 
 if __name__ == "__main__":
