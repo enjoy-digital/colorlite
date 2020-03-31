@@ -9,9 +9,12 @@ wb.open()
 
 # # #
 
-for i in range(16):
-    wb.regs.led_out.write(~wb.regs.led_out.read())
-    time.sleep(0.2)
+print("Toggling Led...")
+for i in range(2):
+    wb.regs.led_out.write(1)
+    time.sleep(0.5)
+    wb.regs.led_out.write(0)
+    time.sleep(0.5)
 
 # # #
 

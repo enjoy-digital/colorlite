@@ -17,6 +17,15 @@ from litex.soc.integration.soc_core import *
 from litex.soc.integration.builder import *
 
 from liteeth.phy.ecp5rgmii import LiteEthPHYRGMII
+from litex.build.generic_platform import *
+from litex.boards.platforms import genesys2
+
+# IOs ----------------------------------------------------------------------------------------------
+
+_gpios = [
+    ("gpio", 0, Pins("j4:0"), IOStandard("LVCMOS33")),
+    ("gpio", 1, Pins("j4:1"), IOStandard("LVCMOS33")),
+]
 
 # CRG ----------------------------------------------------------------------------------------------
 
@@ -34,7 +43,7 @@ class _CRG(Module):
         self.submodules.pll = pll = ECP5PLL()
 
         pll.register_clkin(clk25, 25e6)
-        pll.create_clkout(self.cd_sys,    sys_clk_freq, phase=11)
+        pll.create_clkout(self.cd_sys,    sys_clk_freq)
         self.specials += AsyncResetSynchronizer(self.cd_sys, ~pll.locked | ~rst_n)
 
 # ColorLite ----------------------------------------------------------------------------------------
@@ -61,6 +70,13 @@ class ColorLite(SoCMini):
         # Led --------------------------------------------------------------------------------------
         self.submodules.led = GPIOOut(platform.request("user_led_n"))
         self.add_csr("led")
+
+        # GPIOs ------------------------------------------------------------------------------------
+        platform.add_extension(_gpios)
+        self.submodules.gpio0 = GPIOOut(platform.request("gpio", 0))
+        self.submodules.gpio1 = GPIOOut(platform.request("gpio", 1))
+        self.add_csr("gpio0")
+        self.add_csr("gpio1")
 
 # Load ---------------------------------------------------------------------------------------------
 
