@@ -12,6 +12,7 @@ from migen.genlib.resetsync import AsyncResetSynchronizer
 from litex_boards.platforms import colorlight_5a_75b
 
 from litex.soc.cores.clock import *
+from litex.soc.cores.spi_flash import ECP5SPIFlash
 from litex.soc.cores.gpio import GPIOOut
 from litex.soc.integration.soc_core import *
 from litex.soc.integration.builder import *
@@ -67,6 +68,14 @@ class ColorLite(SoCMini):
             self.add_csr("ethphy")
             self.add_etherbone(phy=self.ethphy)
 
+        # SPIFlash ---------------------------------------------------------------------------------
+        self.submodules.spiflash = ECP5SPIFlash(
+            pads         = platform.request("spiflash"),
+            sys_clk_freq = sys_clk_freq,
+            spi_clk_freq = 5e6,
+        )
+        self.add_csr("spiflash")
+
         # Led --------------------------------------------------------------------------------------
         self.submodules.led = GPIOOut(platform.request("user_led_n"))
         self.add_csr("led")
@@ -97,6 +106,27 @@ jtag newtap ecp5 tap -irlen 8 -expected-id 0x41111043
     os.system("openocd -f openocd.cfg -c \"transport select jtag; init; svf build/gateware/colorlite.svf; exit\"")
     exit()
 
+# Flash --------------------------------------------------------------------------------------------
+
+def flash():
+    import os
+    os.system("cp bit_to_flash.py build/gateware/")
+    os.system("cd build/gateware && ./bit_to_flash.py colorlite.bit colorlite.svf.flash")
+    f = open("openocd.cfg", "w")
+    f.write(
+"""
+interface ftdi
+ftdi_vid_pid 0x0403 0x6011
+ftdi_channel 0
+ftdi_layout_init 0x0098 0x008b
+reset_config none
+adapter_khz 25000
+jtag newtap ecp5 tap -irlen 8 -expected-id 0x41111043
+""")
+    f.close()
+    os.system("openocd -f openocd.cfg -c \"transport select jtag; init; svf build/gateware/colorlite.svf.flash; exit\"")
+    exit()
+
 # Build --------------------------------------------------------------------------------------------
 
 def main():
@@ -104,11 +134,15 @@ def main():
     parser.add_argument("--build", action="store_true", help="build bitstream")
     parser.add_argument("--revision", default="7.0", type=str, help="Board revision 7.0 (default) or 6.1")
     parser.add_argument("--eth-phy", default=0, type=int, help="Ethernet PHY 0 or 1 (default=0)")
-    parser.add_argument("--load", action="store_true", help="load bitstream")
+    parser.add_argument("--load",  action="store_true", help="load bitstream")
+    parser.add_argument("--flash", action="store_true", help="flash bitstream")
     args = parser.parse_args()
 
     if args.load:
         load()
+
+    if args.flash:
+        flash()
 
     soc     = ColorLite(args.revision)
     builder = Builder(soc, output_dir="build", csr_csv="csr.csv")
