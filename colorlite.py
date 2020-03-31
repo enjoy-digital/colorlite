@@ -66,7 +66,11 @@ class ColorLite(SoCMini):
                 clock_pads = self.platform.request("eth_clocks"),
                 pads       = self.platform.request("eth"))
             self.add_csr("ethphy")
-            self.add_etherbone(phy=self.ethphy)
+            self.add_etherbone(
+                phy         = self.ethphy,
+                ip_address  = "192.168.1.20",
+                mac_address = 0x726b895bc2e2,
+            )
 
         # SPIFlash ---------------------------------------------------------------------------------
         self.submodules.spiflash = ECP5SPIFlash(
