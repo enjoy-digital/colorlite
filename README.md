@@ -65,3 +65,7 @@ $ ./test_flash.py (will do a short pulse on reboot switch)
 ```
 
 > **Note**: It is recommended to operate this on a local network. It's possible to expose/use it over Internet through a Router but the protocol is not secured at all, so don't use it to control sensitive equipments or at your own risk!
+
+End of the tutorial, time to power off! :)
+
+<p align="center"><img src="https://raw.githubusercontent.com/enjoy-digital/colorlite/master/doc/power_off.jpg"></p>
