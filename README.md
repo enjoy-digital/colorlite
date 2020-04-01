@@ -63,3 +63,5 @@ $ ./test_power_on.py (will do a short pulse on power switch)
 $ ./test_gpios.py (will do a short long pulse on power switch)
 $ ./test_flash.py (will do a short pulse on reboot switch)
 ```
+
+> **Note**: It is recommended to operate this on a local network. It's possible to expose/use it over Internet through a Router but the protocol is not secured at all, so don't use it to control sensitive equipments or at your own risk!
