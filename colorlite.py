@@ -134,7 +134,7 @@ jtag newtap ecp5 tap -irlen 8 -expected-id 0x41111043
 # Build --------------------------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Take control of your ColorLight FPGA board with LiteX")
+    parser = argparse.ArgumentParser(description="Take control of your ColorLight FPGA board with LiteX/LiteEth :)")
     parser.add_argument("--build", action="store_true", help="build bitstream")
     parser.add_argument("--revision", default="7.0", type=str, help="Board revision 7.0 (default) or 6.1")
     parser.add_argument("--eth-phy", default=0, type=int, help="Ethernet PHY 0 or 1 (default=0)")
@@ -149,7 +149,7 @@ def main():
         flash()
 
     soc     = ColorLite(args.revision)
-    builder = Builder(soc, output_dir="build", csr_csv="csr.csv")
+    builder = Builder(soc, output_dir="build", csr_csv="scripts/csr.csv")
     builder.build(build_name="colorlite", run=args.build)
 
 if __name__ == "__main__":
