@@ -1,10 +1,10 @@
 ```
-                     _____     __         __   _ __
-                    / ___/__  / /__  ____/ /  (_) /____
-                   / /__/ _ \/ / _ \/ __/ /__/ / __/ -_)
-                   \___/\___/_/\___/_/ /____/_/\__/\__/
-                     Copyright (c) 2020, EnjoyDigital
-                         Powered by Migen & LiteX
+                                     _____     __         __   _ __
+                                    / ___/__  / /__  ____/ /  (_) /____
+                                   / /__/ _ \/ / _ \/ __/ /__/ / __/ -_)
+                                   \___/\___/_/\___/_/ /____/_/\__/\__/
+                                     Copyright (c) 2020, EnjoyDigital
+                                         Powered by Migen & LiteX
 ```
 ![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)
 
