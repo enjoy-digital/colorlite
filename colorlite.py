@@ -92,33 +92,6 @@ class ColorLite(SoCMini):
         self.add_csr("gpio0")
         self.add_csr("gpio1")
 
-# Load / Flash -------------------------------------------------------------------------------------
-
-def openocd_run_svf(filename):
-    f = open("openocd.cfg", "w")
-    f.write(
-"""
-interface ftdi
-ftdi_vid_pid 0x0403 0x6011
-ftdi_channel 0
-ftdi_layout_init 0x0098 0x008b
-reset_config none
-adapter_khz 25000
-jtag newtap ecp5 tap -irlen 8 -expected-id 0x41111043
-""")
-    f.close()
-    os.system("openocd -f openocd.cfg -c \"transport select jtag; init; svf {}; exit\"".format(filename))
-    os.system("rm openocd.cfg")
-
-def load():
-    openocd_run_svf("build/gateware/colorlite.svf")
-
-def flash():
-    import os
-    os.system("cp bit_to_flash.py build/gateware/")
-    os.system("cd build/gateware && ./bit_to_flash.py colorlite.bit colorlite.svf.flash")
-    openocd_run_svf("build/gateware/colorlite.svf.flash")
-
 # Build --------------------------------------------------------------------------------------------
 
 def main():
@@ -135,10 +108,14 @@ def main():
     builder.build(build_name="colorlite", run=args.build)
 
     if args.load:
-        load()
+        prog = soc.platform.create_programmer()
+        prog.load_bitstream(os.path.join(builder.gateware_dir, soc.build_name + ".svf"))
 
     if args.flash:
-        flash()
+        prog = soc.platform.create_programmer()
+        os.system("cp bit_to_flash.py build/gateware/")
+        os.system("cd build/gateware && ./bit_to_flash.py colorlite.bit colorlite.svf.flash")
+        prog.load_bitstream(os.path.join(builder.gateware_dir, soc.build_name + ".svf.flash"))
 
 if __name__ == "__main__":
     main()
