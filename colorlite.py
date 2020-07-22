@@ -8,6 +8,7 @@ import argparse
 import sys
 
 from migen import *
+from migen.genlib.misc import WaitTimer
 from migen.genlib.resetsync import AsyncResetSynchronizer
 
 from litex_boards.platforms import colorlight_5a_75b
@@ -87,9 +88,20 @@ class ColorLite(SoCMini):
 
         # GPIOs ------------------------------------------------------------------------------------
         platform.add_extension(_gpios)
-        self.submodules.gpio0 = GPIOOut(platform.request("gpio", 0))
-        self.submodules.gpio1 = GPIOOut(platform.request("gpio", 1))
+
+        # Power switch
+        power_sw_pads  = platform.request("gpio", 0)
+        power_sw_gpio  = Signal()
+        power_sw_timer = WaitTimer(2*sys_clk_freq) # Set Power switch high after power up for 2s.
+        self.comb += power_sw_timer.wait.eq(1)
+        self.submodules += power_sw_timer
+        self.submodules.gpio0 = GPIOOut(power_sw_gpio)
         self.add_csr("gpio0")
+        self.comb += power_sw_pads.eq(power_sw_gpio | ~power_sw_timer.done)
+
+        # Reset Switch
+        reset_sw_pads  = platform.request("gpio", 1)
+        self.submodules.gpio1 = GPIOOut(reset_sw_pads)
         self.add_csr("gpio1")
 
 # Build --------------------------------------------------------------------------------------------
