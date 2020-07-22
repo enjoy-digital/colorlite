@@ -15,7 +15,7 @@ STATUS_DONE    = (1 << 0)
 STATUS_ONGOING = (1 << 0)
 
 # Registers
-READ_ID = 0x9E
+READ_ID = 0x9F
 READ    = 0x03
 WREN    = 0x06
 WRDI    = 0x04
