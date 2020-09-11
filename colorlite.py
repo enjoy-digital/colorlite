@@ -44,10 +44,9 @@ class _CRG(Module):
 
         # PLL
         self.submodules.pll = pll = ECP5PLL()
-
+        self.comb += pll.reset.eq(~rst_n)
         pll.register_clkin(clk25, 25e6)
-        pll.create_clkout(self.cd_sys,    sys_clk_freq)
-        self.specials += AsyncResetSynchronizer(self.cd_sys, ~pll.locked | ~rst_n)
+        pll.create_clkout(self.cd_sys, sys_clk_freq)
 
 # ColorLite ----------------------------------------------------------------------------------------
 
