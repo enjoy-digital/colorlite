@@ -14,6 +14,8 @@
 --------
 This small project is an attempt to use a $15 FPGA board to do some remote control/monitoring over an Ethernet network. It can be convenient to power on/power off systems remotely and/or do some monitoring. This has been created in this strange COVID-19 period to avoid moving all the lab equipment to home and ease remote work, but this is also a practical example of a very simple LiteX SoC built with full open-source tools. Similar things can be easily done with Arduino, Rapsberry Pi, ESP32 for almost the same price or even cheaper but here the fun is to use our tools for that... and maybe extend this project to something more powerful in the future (Remote logic analyzer with 1Gbps link? :)).
 
+<p align="center"><img src="https://raw.githubusercontent.com/enjoy-digital/colorlite/master/doc/architecture.png"></p>
+
 [> Prerequisites
 ----------------
 - Yosys/Nextpnr ECP5 toolchain installed.
