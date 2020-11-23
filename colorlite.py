@@ -16,6 +16,7 @@ from litex_boards.platforms import colorlight_5a_75b
 from litex.soc.cores.clock import *
 from litex.soc.cores.spi_flash import ECP5SPIFlash
 from litex.soc.cores.gpio import GPIOOut
+from litex.soc.cores.led import LedChaser
 from litex.soc.integration.soc_core import *
 from litex.soc.integration.builder import *
 
@@ -53,7 +54,7 @@ class _CRG(Module):
 class ColorLite(SoCMini):
     def __init__(self, with_etherbone=True, ip_address=None, mac_address=None):
         platform     = colorlight_5a_75b.Platform(revision="7.0")
-        sys_clk_freq = int(125e6)
+        sys_clk_freq = int(50e6)
 
         # SoCMini ----------------------------------------------------------------------------------
         SoCMini.__init__(self, platform, clk_freq=sys_clk_freq)
@@ -65,7 +66,8 @@ class ColorLite(SoCMini):
         if with_etherbone:
             self.submodules.ethphy = LiteEthPHYRGMII(
                 clock_pads = self.platform.request("eth_clocks"),
-                pads       = self.platform.request("eth"))
+                pads       = self.platform.request("eth"),
+                tx_delay   = 0e-9)
             self.add_csr("ethphy")
             self.add_etherbone(
                 phy         = self.ethphy,
@@ -82,8 +84,10 @@ class ColorLite(SoCMini):
         self.add_csr("spiflash")
 
         # Led --------------------------------------------------------------------------------------
-        self.submodules.led = GPIOOut(platform.request("user_led_n"))
-        self.add_csr("led")
+        self.submodules.leds = LedChaser(
+            pads         = platform.request_all("user_led_n"),
+            sys_clk_freq = sys_clk_freq)
+        self.add_csr("leds")
 
         # GPIOs ------------------------------------------------------------------------------------
         platform.add_extension(_gpios)
@@ -107,11 +111,11 @@ class ColorLite(SoCMini):
 
 def main():
     parser = argparse.ArgumentParser(description="Take control of your ColorLight FPGA board with LiteX/LiteEth :)")
-    parser.add_argument("--build",       action="store_true",      help="build bitstream")
-    parser.add_argument("--load",        action="store_true",      help="load bitstream")
-    parser.add_argument("--flash",       action="store_true",      help="flash bitstream")
-    parser.add_argument("--ip-address",  default="192.168.1.20",   help="Ethernet IP address of the board.")
-    parser.add_argument("--mac-address", default="0x726b895bc2e2", help="Ethernet MAC address of the board.")
+    parser.add_argument("--build",       action="store_true",      help="Build bitstream")
+    parser.add_argument("--load",        action="store_true",      help="Load bitstream")
+    parser.add_argument("--flash",       action="store_true",      help="Flash bitstream")
+    parser.add_argument("--ip-address",  default="192.168.1.20",   help="Ethernet IP address of the board (default: 192.168.1.20).")
+    parser.add_argument("--mac-address", default="0x726b895bc2e2", help="Ethernet MAC address of the board (defaullt: 0x726b895bc2e2).")
     args = parser.parse_args()
 
     soc     = ColorLite(ip_address=args.ip_address, mac_address=int(args.mac_address, 0))
