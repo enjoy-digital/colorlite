@@ -22,7 +22,6 @@ from litex.soc.integration.builder import *
 
 from liteeth.phy.ecp5rgmii import LiteEthPHYRGMII
 from litex.build.generic_platform import *
-from litex.boards.platforms import genesys2
 
 # IOs ----------------------------------------------------------------------------------------------
 
