@@ -3,8 +3,8 @@
                                     / ___/__  / /__  ____/ /  (_) /____
                                    / /__/ _ \/ / _ \/ __/ /__/ / __/ -_)
                                    \___/\___/_/\___/_/ /____/_/\__/\__/
-                                     Copyright (c) 2020, EnjoyDigital
-                                         Powered by Migen & LiteX
+                                     Copyright (c) 2020-2022, EnjoyDigital
+                                             Powered by LiteX
 ```
 ![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)
 
@@ -40,7 +40,7 @@ $ ./colorlite.py --ip-address=192.168.1.20 --flash
 [> Open LiteX server
 --------------------
 ```sh
-$ lxserver --udp --udp-ip=192.168.1.20
+$ litex_server --udp --udp-ip=192.168.1.20
 ```
 
 [> Enjoy :)

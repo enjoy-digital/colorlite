@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 
-# This file is Copyright (c) 2020 Florent Kermarrec <florent@enjoy-digital.fr>
-# License: BSD
+#
+# This file is part of Colorlite.
+#
+# Copyright (c) 2020-2022 Florent Kermarrec <florent@enjoy-digital.fr>
+# SPDX-License-Identifier: BSD-2-Clause
 
-import argparse
 import sys
+import argparse
 
 from migen import *
 from migen.genlib.resetsync import AsyncResetSynchronizer
 
 from litex.build.generic_platform import *
 from litex.build.lattice import LatticePlatform
+from litex.build.lattice.programmer import OpenOCDJTAGProgrammer
 
 from litex.soc.cores.clock import *
 from litex.soc.integration.soc_core import *
@@ -29,6 +33,9 @@ class Platform(LatticePlatform):
     def __init__(self, **kwargs):
         LatticePlatform.__init__(self, "LFE5U-25F-6BG256C", _io, **kwargs)
 
+    def create_programmer(self):
+        return OpenOCDJTAGProgrammer("openocd_colorlight_5a_75b.cfg")
+
 # CRG ----------------------------------------------------------------------------------------------
 
 class _CRG(Module):
@@ -42,18 +49,10 @@ class _CRG(Module):
         clk25 = platform.request("clk25")
         platform.add_period_constraint(clk25, 1e9/25e6)
 
-        # Power on reset
-        por_count = Signal(16, reset=2**16-1)
-        por_done = Signal()
-        self.comb += self.cd_por.clk.eq(ClockSignal())
-        self.comb += por_done.eq(por_count == 0)
-        self.sync.por += If(~por_done, por_count.eq(por_count - 1))
-
         # PLL
         self.submodules.pll = pll = ECP5PLL()
         pll.register_clkin(clk25, 25e6)
         pll.create_clkout(self.cd_sys, sys_clk_freq)
-        self.specials += AsyncResetSynchronizer(self.cd_sys, ~por_done | ~pll.locked)
 
 # IOStreamer ---------------------------------------------------------------------------------------
 
@@ -82,12 +81,14 @@ class IOStreamer(Module):
 # IOsStreamSoC -------------------------------------------------------------------------------------
 
 class IOsStreamSoC(SoCMini):
-    def __init__(self, platform):
-        sys_clk_freq = int(25e6)
-        SoCMini.__init__(self, platform, sys_clk_freq)
+    def __init__(self, sys_clk_freq=int(25e6)):
+        platform = Platform(toolchain="trellis")
 
         # CRG --------------------------------------------------------------------------------------
         self.submodules.crg = _CRG(platform, sys_clk_freq)
+
+        # SoC Mini ---------------------------------------------------------------------------------
+        SoCMini.__init__(self, platform, sys_clk_freq)
 
         # Get IOs from JSON database ---------------------------------------------------------------
         import json
@@ -102,6 +103,12 @@ class IOsStreamSoC(SoCMini):
         for exclude in excludes:
             ios.remove(exclude)
 
+        # Reduce number of IOs ---------------------------------------------------------------------
+        ios = ios[0*len(ios)//4:1*len(ios)//4]
+        #ios = ios[1*len(ios)//4:2*len(ios)//4]
+        #ios = ios[2*len(ios)//4:3*len(ios)//4]
+        #ios = ios[3*len(ios)//4:4*len(ios)//4]
+
         # Create platform IOs ----------------------------------------------------------------------
         for io in ios:
             platform.add_extension([(io, 0, Pins(io), IOStandard("LVCMOS33"), Misc("DRIVE=4"))])
@@ -110,24 +117,6 @@ class IOsStreamSoC(SoCMini):
         for io in ios:
             io_streamer = IOStreamer(io, platform.request(io), sys_clk_freq, baudrate=9600)
             self.submodules += io_streamer
-# Load ---------------------------------------------------------------------------------------------
-
-def load():
-    import os
-    f = open("openocd.cfg", "w")
-    f.write(
-"""
-interface ftdi
-ftdi_vid_pid 0x0403 0x6011
-ftdi_channel 0
-ftdi_layout_init 0x0098 0x008b
-reset_config none
-adapter_khz 25000
-jtag newtap ecp5 tap -irlen 8 -expected-id 0x41111043
-""")
-    f.close()
-    os.system("openocd -f openocd.cfg -c \"transport select jtag; init; svf build/gateware/ios_stream.svf; exit\"")
-    exit()
 
 # Build --------------------------------------------------------------------------------------------
 
@@ -137,13 +126,13 @@ def main():
     parser.add_argument("--load", action="store_true", help="load bitstream")
     args = parser.parse_args()
 
-    if args.load:
-        load()
-
-    platform = Platform(toolchain="trellis")
-    soc      = IOsStreamSoC(platform)
-    builder  = Builder(soc, output_dir="build")
+    soc     = IOsStreamSoC()
+    builder = Builder(soc, output_dir="build")
     builder.build(build_name="ios_stream", run=args.build)
+
+    if args.load:
+        prog = soc.platform.create_programmer()
+        prog.load_bitstream(os.path.join(builder.gateware_dir, soc.build_name + ".svf"))
 
 if __name__ == "__main__":
     main()

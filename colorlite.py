@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
-# This file is Copyright (c) 2020 Florent Kermarrec <florent@enjoy-digital.fr>
-# License: BSD
+#
+# This file is part of Colorlite.
+#
+# Copyright (c) 2020-2022 Florent Kermarrec <florent@enjoy-digital.fr>
+# SPDX-License-Identifier: BSD-2-Clause
 
 import os
 import argparse
@@ -37,12 +40,11 @@ class _CRG(Module):
         self.clock_domains.cd_sys    = ClockDomain()
         # # #
 
-        # Clk / Rst
+        # Clk / Rst.
         clk25 = platform.request("clk25")
         rst_n = platform.request("user_btn_n", 0)
-        platform.add_period_constraint(clk25, 1e9/25e6)
 
-        # PLL
+        # PLL.
         self.submodules.pll = pll = ECP5PLL()
         self.comb += pll.reset.eq(~rst_n)
         pll.register_clkin(clk25, 25e6)
@@ -51,15 +53,14 @@ class _CRG(Module):
 # ColorLite ----------------------------------------------------------------------------------------
 
 class ColorLite(SoCMini):
-    def __init__(self, with_etherbone=True, ip_address=None, mac_address=None):
+    def __init__(self, sys_clk_freq=int(50e6), with_etherbone=True, ip_address=None, mac_address=None):
         platform     = colorlight_5a_75b.Platform(revision="7.0")
-        sys_clk_freq = int(50e6)
-
-        # SoCMini ----------------------------------------------------------------------------------
-        SoCMini.__init__(self, platform, clk_freq=sys_clk_freq)
 
         # CRG --------------------------------------------------------------------------------------
         self.submodules.crg = _CRG(platform, sys_clk_freq)
+
+        # SoCMini ----------------------------------------------------------------------------------
+        SoCMini.__init__(self, platform, clk_freq=sys_clk_freq)
 
         # Etherbone --------------------------------------------------------------------------------
         if with_etherbone:
