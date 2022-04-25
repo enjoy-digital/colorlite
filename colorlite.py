@@ -67,7 +67,6 @@ class ColorLite(SoCMini):
                 clock_pads = self.platform.request("eth_clocks"),
                 pads       = self.platform.request("eth"),
                 tx_delay   = 0e-9)
-            self.add_csr("ethphy")
             self.add_etherbone(
                 phy         = self.ethphy,
                 ip_address  = ip_address,
@@ -80,13 +79,11 @@ class ColorLite(SoCMini):
             sys_clk_freq = sys_clk_freq,
             spi_clk_freq = 5e6,
         )
-        self.add_csr("spiflash")
 
         # Led --------------------------------------------------------------------------------------
         self.submodules.leds = LedChaser(
             pads         = platform.request_all("user_led_n"),
             sys_clk_freq = sys_clk_freq)
-        self.add_csr("leds")
 
         # GPIOs ------------------------------------------------------------------------------------
         platform.add_extension(_gpios)
@@ -98,13 +95,11 @@ class ColorLite(SoCMini):
         self.comb += power_sw_timer.wait.eq(1)
         self.submodules += power_sw_timer
         self.submodules.gpio0 = GPIOOut(power_sw_gpio)
-        self.add_csr("gpio0")
         self.comb += power_sw_pads.eq(power_sw_gpio | ~power_sw_timer.done)
 
         # Reset Switch
         reset_sw_pads  = platform.request("gpio", 1)
         self.submodules.gpio1 = GPIOOut(reset_sw_pads)
-        self.add_csr("gpio1")
 
 # Build --------------------------------------------------------------------------------------------
 
