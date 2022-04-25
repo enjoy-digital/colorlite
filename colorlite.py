@@ -71,6 +71,7 @@ class ColorLite(SoCMini):
                 phy         = self.ethphy,
                 ip_address  = ip_address,
                 mac_address = mac_address,
+                data_width  = 32,
             )
 
         # SPIFlash ---------------------------------------------------------------------------------
