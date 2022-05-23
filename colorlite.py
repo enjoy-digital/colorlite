@@ -29,8 +29,15 @@ from litex.build.generic_platform import *
 # IOs ----------------------------------------------------------------------------------------------
 
 _gpios = [
+    # GPIOs.
     ("gpio", 0, Pins("j4:0"), IOStandard("LVCMOS33")),
     ("gpio", 1, Pins("j4:1"), IOStandard("LVCMOS33")),
+
+    # Servos.
+    ("servo", 0, Pins("j3:0"), IOStandard("LVCMOS33")),
+    ("servo", 1, Pins("j3:1"), IOStandard("LVCMOS33")),
+    ("servo", 2, Pins("j3:2"), IOStandard("LVCMOS33")),
+    ("servo", 3, Pins("j3:4"), IOStandard("LVCMOS33")),
 ]
 
 # CRG ----------------------------------------------------------------------------------------------
@@ -102,6 +109,13 @@ class ColorLite(SoCMini):
         # Reset Switch
         reset_sw_pads  = platform.request("gpio", 1)
         self.submodules.gpio1 = GPIOOut(reset_sw_pads)
+
+        # Servos -----------------------------------------------------------------------------------
+        from litex.soc.cores.pwm import PWM
+        for n in range(4):
+            servo_pad = platform.request("servo", n)
+            servo     = PWM(servo_pad)
+            setattr(self.submodules, f"servo{n}", servo)
 
 # Build --------------------------------------------------------------------------------------------
 
