@@ -37,6 +37,10 @@ $ sudo ./litex_setup.py init install
 $ ./colorlite.py --ip-address=192.168.1.20 --flash
 ```
 
+> Note: This project has been tested on a ColorLight 5A-75B V7.0. It should be possible to adapt it
+to other revision of the ColorLight with minor adjustments (`Platform(revision="M.m"`) and eventual
+`tx_delay` adjustment (range `0e-9` to `2e-9`).
+
 [> Open LiteX server
 --------------------
 ```sh
