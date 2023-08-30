@@ -14,6 +14,8 @@ from migen import *
 from migen.genlib.misc import WaitTimer
 from migen.genlib.resetsync import AsyncResetSynchronizer
 
+from litex.gen import *
+
 from litex_boards.platforms import colorlight_5a_75b
 
 from litex.soc.cores.clock import *
@@ -42,9 +44,9 @@ _gpios = [
 
 # CRG ----------------------------------------------------------------------------------------------
 
-class _CRG(Module):
+class _CRG(LiteXModule):
     def __init__(self, platform, sys_clk_freq):
-        self.clock_domains.cd_sys    = ClockDomain()
+        self.cd_sys = ClockDomain()
         # # #
 
         # Clk / Rst.
@@ -52,7 +54,7 @@ class _CRG(Module):
         rst_n = platform.request("user_btn_n", 0)
 
         # PLL.
-        self.submodules.pll = pll = ECP5PLL()
+        self.pll = pll = ECP5PLL()
         self.comb += pll.reset.eq(~rst_n)
         pll.register_clkin(clk25, 25e6)
         pll.create_clkout(self.cd_sys, sys_clk_freq)
@@ -60,18 +62,18 @@ class _CRG(Module):
 # ColorLite ----------------------------------------------------------------------------------------
 
 class ColorLite(SoCMini):
-    def __init__(self, sys_clk_freq=int(50e6), with_etherbone=True, ip_address=None, mac_address=None):
-        platform     = colorlight_5a_75b.Platform(revision="7.0")
+    def __init__(self, sys_clk_freq=int(40e6), with_etherbone=True, ip_address=None, mac_address=None):
+        platform = colorlight_5a_75b.Platform(revision="7.0")
 
         # CRG --------------------------------------------------------------------------------------
-        self.submodules.crg = _CRG(platform, sys_clk_freq)
+        self.crg = _CRG(platform, sys_clk_freq)
 
         # SoCMini ----------------------------------------------------------------------------------
         SoCMini.__init__(self, platform, clk_freq=sys_clk_freq)
 
         # Etherbone --------------------------------------------------------------------------------
         if with_etherbone:
-            self.submodules.ethphy = LiteEthPHYRGMII(
+            self.ethphy = LiteEthPHYRGMII(
                 clock_pads = self.platform.request("eth_clocks"),
                 pads       = self.platform.request("eth"),
                 tx_delay   = 0e-9)
@@ -83,14 +85,14 @@ class ColorLite(SoCMini):
             )
 
         # SPIFlash ---------------------------------------------------------------------------------
-        self.submodules.spiflash = ECP5SPIFlash(
+        self.spiflash = ECP5SPIFlash(
             pads         = platform.request("spiflash"),
             sys_clk_freq = sys_clk_freq,
             spi_clk_freq = 5e6,
         )
 
         # Led --------------------------------------------------------------------------------------
-        self.submodules.leds = LedChaser(
+        self.leds = LedChaser(
             pads         = platform.request_all("user_led_n"),
             sys_clk_freq = sys_clk_freq)
 
@@ -103,12 +105,12 @@ class ColorLite(SoCMini):
         power_sw_timer = WaitTimer(2*sys_clk_freq) # Set Power switch high after power up for 2s.
         self.comb += power_sw_timer.wait.eq(1)
         self.submodules += power_sw_timer
-        self.submodules.gpio0 = GPIOOut(power_sw_gpio)
+        self.gpio0 = GPIOOut(power_sw_gpio)
         self.comb += power_sw_pads.eq(power_sw_gpio | ~power_sw_timer.done)
 
         # Reset Switch
         reset_sw_pads  = platform.request("gpio", 1)
-        self.submodules.gpio1 = GPIOOut(reset_sw_pads)
+        self.gpio1 = GPIOOut(reset_sw_pads)
 
         # Servos -----------------------------------------------------------------------------------
         from litex.soc.cores.pwm import PWM
